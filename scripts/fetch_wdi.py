@@ -33,27 +33,31 @@ WB_CODES = {
 WB_API = "https://api.worldbank.org/v2/country/{iso}/indicator/{ind}"
 
 
-def fetch_series(iso3: str, indicator: str, year_from: int, year_to: int) -> dict[int, float]:
+def fetch_series(iso3: str, indicator: str, year_from: int, year_to: int,
+                 retries: int = 3) -> dict[int, float]:
     url = WB_API.format(iso=iso3, ind=indicator)
-    params = {
-        "date": f"{year_from}:{year_to}",
-        "format": "json",
-        "per_page": 100,
-    }
-    try:
-        r = requests.get(url, params=params, timeout=30)
-        r.raise_for_status()
-        data = r.json()
-        if len(data) < 2 or not data[1]:
-            return {}
-        return {
-            entry["date"] and int(entry["date"]): entry["value"]
-            for entry in data[1]
-            if entry.get("value") is not None
-        }
-    except Exception as e:
-        print(f"    WARNING: {iso3} {indicator}: {e}")
-        return {}
+    params = {"date": f"{year_from}:{year_to}", "format": "json", "per_page": 100}
+    for attempt in range(1, retries + 1):
+        try:
+            r = requests.get(url, params=params, timeout=60)
+            r.raise_for_status()
+            data = r.json()
+            if len(data) < 2 or not data[1]:
+                return {}
+            return {
+                int(entry["date"]): entry["value"]
+                for entry in data[1]
+                if entry.get("value") is not None and entry.get("date")
+            }
+        except Exception as e:
+            if attempt < retries:
+                wait = 5 * attempt
+                print(f"    attempt {attempt} failed ({e}), retrying in {wait}s …", end=" ", flush=True)
+                time.sleep(wait)
+            else:
+                print(f"    WARNING: {iso3} {indicator}: {e}")
+                return {}
+    return {}
 
 
 def fetch_country(iso3: str) -> pd.DataFrame:
@@ -112,6 +116,8 @@ def main():
     if not new_frames:
         return
 
+    # drop existing rows for countries we just re-fetched (avoid duplicates)
+    existing = existing[~existing["country_code"].isin(targets)]
     combined = pd.concat([existing] + new_frames, ignore_index=True)
     combined = combined.sort_values(["country_code", "year"]).reset_index(drop=True)
     combined.to_csv(csv_path, index=False)

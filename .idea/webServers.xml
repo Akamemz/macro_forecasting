@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="590d5568-978b-432a-9319-8a3829b9d219" name="tabdygul@10.96.50.180:22">
+        <fileTransfer rootFolder="/mnt/bst/a100/ramazan/tabdygul" accessType="SFTP" host="tabdygul@10.96.50.180" port="22" sshConfigId="313441a6-a952-4481-8dc0-f524e62f651a" sshConfig="tabdygul@tabdygul@10.96.50.180:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

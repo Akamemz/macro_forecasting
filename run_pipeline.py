@@ -69,13 +69,17 @@ if __name__ == "__main__":
     parser.add_argument("--epochs",     type=int, default=50)
     parser.add_argument("--device",     default="cpu")
     parser.add_argument("--skip-train", action="store_true")
+    parser.add_argument("--skip-gen",   action="store_true",
+                        help="Skip dummy data generation (use when real data is already in place)")
     parser.add_argument("--models",     nargs="+",
                         default=["dlinear", "numerical_gru", "gr_add"])
     args = parser.parse_args()
 
-    step_generate_dummy()
+    if not args.skip_gen:
+        step_generate_dummy()
     step_encode_text(args.emb)
-    step_test_pdf_extraction()
+    if not args.skip_gen:
+        step_test_pdf_extraction()
 
     if not args.skip_train:
         step_train(args.models, args.epochs, args.device)

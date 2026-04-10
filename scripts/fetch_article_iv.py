@@ -51,7 +51,7 @@ COVEO_TOKEN     = "xx742a6c66-f427-4f5a-ae1e-770dc7264e8a"
 IMF_ROOT = "https://www.imf.org"
 
 # ── country config ────────────────────────────────────────────────────────────
-COUNTRY_QUERY: dict[str, str] = {
+COUNTRY_QUERY = {
     "KAZ": "Kazakhstan",
     "KGZ": "Kyrgyz Republic",
     "TJK": "Tajikistan",
@@ -76,7 +76,7 @@ COUNTRY_QUERY: dict[str, str] = {
     "JPN": "Japan",
 }
 
-COUNTRY_ALIASES: dict[str, list[str]] = {
+COUNTRY_ALIASES = {
     "KGZ": ["Kyrgyz Republic", "Kyrgyzstan"],
     "MKD": ["North Macedonia", "FYR Macedonia", "Republic of North Macedonia", "Former Yugoslav Republic of Macedonia", "Macedonia"],
     "TUR": ["Turkey", "Türkiye"],
@@ -90,7 +90,7 @@ _BOILERPLATE = re.compile(
     re.IGNORECASE,
 )
 
-def extract_text_from_bytes(pdf_bytes: bytes, max_pages: int = 6) -> str:
+def extract_text_from_bytes(pdf_bytes, max_pages=6):
     import fitz
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     pages = min(max_pages, doc.page_count)
@@ -108,18 +108,18 @@ def extract_text_from_bytes(pdf_bytes: bytes, max_pages: int = 6) -> str:
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-def parse_year(text: str) -> int | None:
+def parse_year(text):
     m = re.search(r"\b(20\d{2}|199\d)\b", text)
     return int(m.group(1)) if m else None
 
-def title_matches_country(title: str, iso3: str) -> bool:
+def title_matches_country(title, iso3):
     title_lower = title.lower()
     names = COUNTRY_ALIASES.get(iso3, [COUNTRY_QUERY[iso3]])
     return any(n.lower() in title_lower for n in names)
 
 _IMF_MARKERS = ["article iv", "consultation", "imf", "executive board", "staff report"]
 
-def is_real(iso3: str, year: int) -> bool:
+def is_real(iso3, year):
     """True if we already have genuine IMF text (not dummy)."""
     path = TEXT_DIR / f"{iso3}_{year}.txt"
     if not path.exists():
@@ -127,7 +127,7 @@ def is_real(iso3: str, year: int) -> bool:
     text = path.read_text(encoding="utf-8", errors="ignore").lower()
     return any(m in text for m in _IMF_MARKERS)
 
-def save_text(iso3: str, year: int, text: str) -> Path:
+def save_text(iso3, year, text):
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
     out = TEXT_DIR / f"{iso3}_{year}.txt"
     out.write_text(text, encoding="utf-8")
@@ -135,7 +135,7 @@ def save_text(iso3: str, year: int, text: str) -> Path:
 
 # ── Coveo search ──────────────────────────────────────────────────────────────
 
-def _coveo_post(token: str, body: dict) -> dict:
+def _coveo_post(token, body):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     resp = requests.post(
         f"{COVEO_ENDPOINT}?organizationId={COVEO_ORG}",
@@ -144,7 +144,7 @@ def _coveo_post(token: str, body: dict) -> dict:
     resp.raise_for_status()
     return resp.json()
 
-def coveo_search(iso3: str, token: str, page: int = 0, page_size: int = 100) -> dict:
+def coveo_search(iso3, token, page=0, page_size=100):
     """
     Query Coveo for Article IV country reports using imfisocode (ISO3).
     - @imfisocode for exact country match (works for all countries)
@@ -163,7 +163,7 @@ def coveo_search(iso3: str, token: str, page: int = 0, page_size: int = 100) -> 
     }
     return _coveo_post(token, body)
 
-def get_all_results(iso3: str, token: str) -> list[dict]:
+def get_all_results(iso3, token):
     """Page through all Coveo results for this ISO3 country code."""
     all_results = []
     page = 0
@@ -185,7 +185,7 @@ UA = (
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
-def normalize_imf_url(url: str) -> str:
+def normalize_imf_url(url):
     """Replace internal IMF staging hostnames with the public www.imf.org."""
     import urllib.parse
     parsed = urllib.parse.urlparse(url)
@@ -194,7 +194,7 @@ def normalize_imf_url(url: str) -> str:
     return url
 
 
-def get_pdf_bytes(ctx, article_url: str) -> bytes | None:
+def get_pdf_bytes(ctx, article_url):
     """
     Open the article page in a browser, find the PDF, return bytes.
     Never writes to disk.
@@ -286,7 +286,7 @@ def get_pdf_bytes(ctx, article_url: str) -> bytes | None:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def run(target_countries: list[str], year_from: int, year_to: int,
+def run(target_countries, year_from, year_to,
         dry_run: bool, token: str):
     from playwright.sync_api import sync_playwright
 
@@ -313,7 +313,7 @@ def run(target_countries: list[str], year_from: int, year_to: int,
         print(f"  Coveo returned {len(results)} result(s)")
 
         # deduplicate by (year) — Coveo returns same article with mixed-case URLs
-        seen_years: set[int] = set()
+        seen_years = set()
 
         for result in results:
             title    = result.get("title", "")

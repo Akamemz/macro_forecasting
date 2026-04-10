@@ -146,8 +146,11 @@ def build_sample(
     for _, row in country_meta.iterrows():
         emb_file = EMB_DIR / f"{country}_{int(row['ref_year'])}.npy"
         if emb_file.exists():
-            text_embs.append(np.load(emb_file))
-            text_ts.append(norm_year(row["pub_year_frac"]))
+            try:
+                text_embs.append(np.load(emb_file))
+                text_ts.append(norm_year(row["pub_year_frac"]))
+            except Exception:
+                pass  # skip corrupted or empty .npy files
 
     if text_embs:
         text_embs_arr = np.stack(text_embs, axis=0).astype(np.float32)  # (N, 768)
