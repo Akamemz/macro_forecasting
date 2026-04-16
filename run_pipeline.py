@@ -53,8 +53,9 @@ def step_test_pdf_extraction():
 def step_train(models: list[str], epochs: int, device: str):
     print(f"\n[4/5] Training models: {models} …")
     from src.train import train
+    from src.config import BATCH_SIZE, LR
     for m in models:
-        train(m, epochs=epochs, batch_size=16, lr=1e-3, device_str=device)
+        train(m, epochs=epochs, batch_size=BATCH_SIZE, lr=LR, device_str=device)
 
 
 def step_evaluate(device: str):

@@ -58,7 +58,7 @@ N_TARGETS    = len(TARGET_INDICATORS)
 LR                    = 1e-3
 EPOCHS                = 100
 EARLY_STOPPING        = 10     # patience (val epochs)
-BATCH_SIZE            = 16
+BATCH_SIZE            = 8
 
 # ── normalisation helpers ────────────────────────────────────────────────────
 def norm_year(year: float) -> float:

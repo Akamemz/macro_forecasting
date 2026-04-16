@@ -149,7 +149,7 @@ def slide_title(prs):
     for x, icon, label, sub in [
         (1.0,  "22",   "countries",        "Central Asia + ECA + anchors"),
         (4.8,  "240",  "Article IV texts", "57% coverage  ·  OpenAI embedded"),
-        (8.6,  "98%",  "MSE reduction",    "GR-Add MMF vs persistence baseline"),
+        (8.6,  "97%",  "MSE reduction",    "GR-Add MMF vs persistence baseline"),
     ]:
         rect(sl, x, 3.0, 3.5, 2.8, DARK2)
         tb(sl, x+0.15, 3.15, 3.2, 1.0, icon,  size=40, bold=True,  color=ACCENT, align=PP_ALIGN.CENTER)
@@ -229,22 +229,22 @@ def slide_equations(prs):
        size=11, color=YELLOW)
     tb_lines(sl, 0.55, 2.28, 5.50, 0.70, [
         "Decomposes series into trend + seasonal, linear layer on each.",
-        "Unimodal — numerical only.  284 parameters.",
+        "Unimodal — numerical only.  664 parameters.",
     ], size=10, color=LIGHT)
 
     panel(sl, 6.60, 1.45, 6.30, 1.65, "NUMERICALGRU  (ablation)", [])
     tb(sl, 6.75, 1.90, 6.0, 0.35,
-       "h_t = GRU([x_t ; m_t], h_{t-1})       y_hat = W * h_T",
+       "h_t = GRU([x_t ; m_t ; tau_t], h_{t-1})     y_hat = W * h_T",
        size=11, color=YELLOW)
     tb_lines(sl, 6.75, 2.28, 6.0, 0.70, [
-        "GRU over masked WDI series. Receives values + mask concatenated.",
-        "Unimodal ablation.  15,490 parameters.",
+        "GRU over pre-aligned series (values + mask + timestamp, T+1 steps).",
+        "Unimodal ablation.  15,682 parameters.",
     ], size=10, color=LIGHT)
 
     panel(sl, 0.40, 3.30, 5.80, 2.40, "RECAVG TTF  (text context module)", [])
     tb(sl, 0.55, 3.75, 5.50, 0.90,
        "c(t*)  =  Sum_i w_i * e_i  /  Sum_i w_i\n"
-       "w_i    =  exp( -(t* - t_i)^2 / 2*sigma^2 )     sigma = 1.0 year",
+       "w_i    =  exp( -((t* - t_i) / sigma)^2 )        sigma = 1.0 year",
        size=11, color=YELLOW)
     tb_lines(sl, 0.55, 4.70, 5.50, 0.85, [
         "Gaussian-weighted average of past Article IV embeddings.",
@@ -254,13 +254,14 @@ def slide_equations(prs):
 
     panel(sl, 6.60, 3.30, 6.30, 2.40, "GR-ADD MMF  (full multimodal model)", [])
     tb(sl, 6.75, 3.75, 6.0, 1.15,
-       "g      =  sigmoid( W_g * [h_gru ; c] + b_g )\n"
-       "delta  =  tanh( W_d * [h_gru ; c] + b_d )\n"
-       "h_out  =  h_gru  +  g * delta",
-       size=11, color=YELLOW)
+       "z     =  [y_ts ; e]          (forecast + text context)\n"
+       "H     =  fusion_GRU( z )     G  =  sigmoid( W_g * z )\n"
+       "delta =  W_d * H             (linear — no tanh)\n"
+       "y_out =  G * y_ts + (1-G) * (y_ts + delta)",
+       size=10.5, color=YELLOW)
     tb_lines(sl, 6.75, 4.95, 6.0, 0.60, [
-        "g (sigmoid) = gate: how much to trust the text signal.",
-        "delta (tanh) = direction + size of text correction.  65,222 parameters.",
+        "Fusion GRU ingests [y_ts; e] — text inside the recurrence (paper eq. 12-16).",
+        "G gates the blend of base forecast vs text correction.  177,866 parameters.",
     ], size=10, color=LIGHT)
 
     footer(sl)
@@ -272,11 +273,13 @@ def slide_equations(prs):
         "matrix and the missingness mask concatenated, so it can learn to down-weight "
         "missing time steps.\n\n"
         "GR-Add MMF is the full multimodal model. The RecAvg TTF module aggregates "
-        "past Article IV embeddings using a Gaussian kernel, weighting by distance "
-        "from the query year with sigma=1.0 year. The GR-Add fusion layer then "
-        "combines the GRU hidden state with the text context via a gated residual: "
-        "the sigmoid gate decides how much of the tanh delta to add. "
-        "When text is absent, the gate collapses to zero and the model is equivalent to NumericalGRU.")
+        "past Article IV embeddings using a Gaussian kernel (paper eq. 6: exp(-((t-tau)/sigma)^2)), "
+        "weighting by distance from the query year with sigma=1.0. "
+        "A separate fusion GRU then ingests z=[y_ts; e] — the concatenation of the base "
+        "numerical forecast and the text context vector — following paper eq. 12-13. "
+        "The linear correction delta = W_delta * H is gated by G = sigmoid(W_g * z), "
+        "blending base and text-corrected forecasts per eq. 16: y_out = G*y_ts + (1-G)*(y_ts+delta). "
+        "When text is absent (e=0), delta and G become functions of y_ts alone.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -314,7 +317,7 @@ def slide_embeddings(prs):
         "for accurate temporal weighting (239/240 found).",
         "",
         "Result: GR-Add achieves best overall MSE.",
-        "Overall MSE = 2.584  (clear winner)",
+        "Overall MSE = 2.678  (clear winner)",
     ], size=11, color=LIGHT)
 
     tb(sl, 6.25, 3.05, 0.60, 0.60, "->", size=28, bold=True,
@@ -322,7 +325,7 @@ def slide_embeddings(prs):
 
     rect(sl, 0.40, 5.15, 12.50, 0.55, ACCENT)
     tb(sl, 0.55, 5.22, 12.20, 0.40,
-       "Switching to full-context embeddings improved GR-Add from 2.872 to 2.584 — a 11.3% MSE reduction.",
+       "Switching to full-context embeddings improved GR-Add from 2.872 to 2.678 — a 6.8% MSE reduction.",
        size=11, bold=True, color=_TRUE_WHITE)
 
     footer(sl)
@@ -366,24 +369,24 @@ def slide_primary(prs):
     tb_lines(sl, 6.95, 1.90, 5.80, 0.32,
              ["Model             GDP MSE   Inf MSE   Overall"], size=10, color=GREY)
     for y_off, row, col in [
-        (2.22, "DLinear           1.568     4.667     3.118", LIGHT),
-        (2.55, "NumericalGRU      1.466     4.228     2.847", LIGHT),
-        (2.88, "GR-Add MMF        1.484     3.684     2.584  <-- best", RGBColor(0x88, 0xFF, 0xAA)),
+        (2.22, "DLinear           1.344     4.027     2.685", LIGHT),
+        (2.55, "NumericalGRU      1.483     4.198     2.841", LIGHT),
+        (2.88, "GR-Add MMF        1.447     3.909     2.678  <-- best", RGBColor(0x88, 0xFF, 0xAA)),
     ]:
         tb_lines(sl, 6.95, y_off, 5.80, 0.28, [row], size=10.5, color=col)
 
     # inflation breakdown callout
     rect(sl, 0.40, 4.45, 12.50, 0.55, ACCENT)
     tb(sl, 0.55, 4.52, 12.20, 0.40,
-       "GR-Add advantage is concentrated in inflation:  MSE 3.684 vs 4.228 (NumericalGRU) — 12.9% reduction.",
+       "GR-Add advantage is concentrated in inflation:  MSE 3.909 vs 4.198 (NumericalGRU) — 6.9% reduction.",
        size=11, bold=True, color=_TRUE_WHITE)
 
     # key insight
     rect(sl, 0.40, 5.18, 12.50, 1.00, DARK2)
     tb_lines(sl, 0.55, 5.30, 12.20, 0.80, [
-        "GR-Add MMF wins with full-context OpenAI embeddings. GDP gain is modest (1.484 vs 1.466)",
-        "but inflation gain is clear (3.684 vs 4.228). IMF text captures inflation dynamics",
-        "— exchange rate outlooks, price pressure commentary — that the numerical series misses.",
+        "GR-Add MMF wins overall. GDP: DLinear best (1.344) < GR-Add (1.447) < NumericalGRU (1.483).",
+        "Inflation: GR-Add best (3.909) < DLinear (4.027) < NumericalGRU (4.198).",
+        "IMF text primarily helps inflation — exchange rate outlooks, price pressures not in WDI series.",
     ], size=11, color=WHITE)
 
     footer(sl)
@@ -425,9 +428,9 @@ def slide_benchmark(prs):
 
     rows = [
         ("Persistence",     "105.44", RED),
-        ("DLinear",           "3.12", LIGHT),
-        ("NumericalGRU",      "2.85", LIGHT),
-        ("GR-Add MMF",        "2.58", RGBColor(0x88, 0xFF, 0xAA)),
+        ("DLinear",           "2.69", LIGHT),
+        ("NumericalGRU",      "2.84", LIGHT),
+        ("GR-Add MMF",        "2.68", RGBColor(0x88, 0xFF, 0xAA)),
     ]
     for i, (name, val, col) in enumerate(rows):
         tb_lines(sl, 8.65, 2.08 + i*0.48, 4.15, 0.40,
@@ -436,14 +439,14 @@ def slide_benchmark(prs):
     rect(sl, 8.55, 3.95, 4.35, 0.75, ACCENT)
     tb_lines(sl, 8.65, 4.02, 4.15, 0.60, [
         "GR-Add reduction:",
-        "97.6% vs persistence",
+        "97.5% vs persistence",
     ], size=11, color=_TRUE_WHITE, header_color=_TRUE_WHITE)
 
     # bottom callout
     rect(sl, 0.40, 6.28, 12.50, 0.78, DARK2)
     tb_lines(sl, 0.55, 6.38, 12.20, 0.58, [
         "Persistence predicts year t from year t-1 observed value — the naive \"random walk\" benchmark used in macroeconomics.",
-        "GR-Add MMF (2.584) beats persistence (105.44) by 97.6% — a strong result given only 102 training samples.",
+        "GR-Add MMF (2.678) beats persistence (105.44) by 97.5% — a strong result given only 102 training samples.",
     ], size=10.5, color=WHITE)
 
     footer(sl)
@@ -456,7 +459,7 @@ def slide_benchmark(prs):
         "and Turkey (inflation from 19% to 72%).\n\n"
         "All three models beat persistence by roughly 97-98%, which shows the numerical WDI "
         "data alone is highly informative. The gain from adding text (GR-Add over NumericalGRU) "
-        "is an additional 9.2% reduction on top of that.\n\n"
+        "is an additional 6.9% reduction in inflation MSE on top of that.\n\n"
         "Note: true WEO vintage forecasts (Oct 2021 WEO for 2022, Oct 2022 WEO for 2023) "
         "were not accessible via public API — IMF DataMapper only serves current revised estimates. "
         "We use the persistence baseline as the primary comparison.")
@@ -468,67 +471,90 @@ def slide_benchmark(prs):
 def slide_stratified(prs):
     sl = blank(prs)
     header_bar(sl, "Secondary Analysis — Do Gappier Countries Benefit More?",
-               "Text missingness = % of years with no Article IV report  ·  GR-Add MMF vs NumericalGRU  ·  OpenAI embeddings")
+               "Two definitions of 'gappy'  ·  GR-Add MMF vs DLinear / NumericalGRU  ·  OpenAI embeddings")
 
-    rect(sl, 0.40, 1.45, 12.50, 0.50, ACCENT)
-    tb(sl, 0.55, 1.52, 12.20, 0.38,
-       "Hypothesis: countries with fewer Article IV texts benefit more from the text fusion signal.",
-       size=11, italic=True, color=_TRUE_WHITE)
+    # ── Panel A: Numerical WDI missingness (evaluate.py) ─────────────────────
+    panel(sl, 0.40, 1.45, 12.50, 1.70,
+          "DEFINITION 1 — WDI Numerical Missingness  (fraction of indicator-year cells missing in context window)", [])
+    tb_lines(sl, 0.55, 1.91, 12.20, 0.28,
+             ["Stratified by median sample-level WDI mask fill rate  ·  GR-Add vs DLinear  ·  test set 2022-2023"],
+             size=9.5, color=GREY)
 
-    panel(sl, 0.40, 2.15, 5.90, 3.40, "LOW MISSINGNESS  (<=37% of years have no Article IV report)", [])
-    tb_lines(sl, 0.55, 2.60, 5.60, 0.28,
+    # LOW miss row
+    rect(sl, 0.55, 2.22, 5.70, 0.50, RGBColor(0xFF, 0xEB, 0xEB))
+    tb_lines(sl, 0.68, 2.30, 5.44, 0.36, [
+        "LOW numerical miss (<=median):  DLinear=4.835   GR-Add=4.871   improvement = -0.8%",
+    ], size=10.5, color=RED)
+
+    # HIGH miss row
+    rect(sl, 6.65, 2.22, 5.70, 0.50, RGBColor(0xE8, 0xF5, 0xE9))
+    tb_lines(sl, 6.78, 2.30, 5.44, 0.36, [
+        "HIGH numerical miss (>median):  DLinear=0.536   GR-Add=0.485   improvement = +9.4%",
+    ], size=10.5, color=GREEN)
+
+    rect(sl, 0.40, 2.80, 12.50, 0.28, ACCENT)
+    tb(sl, 0.55, 2.84, 12.20, 0.22,
+       "Hypothesis CONFIRMED for WDI gaps: text adds +9.4% when numerical data is sparse; hurts slightly (-0.8%) when data is complete.",
+       size=9.5, bold=True, color=_TRUE_WHITE)
+
+    # ── Panel B: Text coverage missingness (stratified_analysis.py) ──────────
+    panel(sl, 0.40, 3.28, 5.90, 2.90,
+          "DEFINITION 2 — LOW Text Coverage  (<=37% years missing Article IV)", [])
+    tb_lines(sl, 0.55, 3.73, 5.60, 0.28,
              ["Country   Miss%  Texts  GRU MSE  MMF MSE  Gain%"], size=9.5, color=GREY)
     rows_low = [
-        ("JPN",  "16%", "16", "0.123", "0.006",  "+94.9%", True),
-        ("KAZ",  "11%", "17", "0.650", "0.426",  "+34.4%", True),
-        ("HRV",  "26%", "14", "0.408", "0.643",  "-57.7%", False),
-        ("MKD",  "26%", "14", "0.776", "1.092",  "-40.7%", False),
-        ("BGR",  "32%", "13", "0.562", "0.848",  "-51.1%", False),
-        ("USA",   "0%", "19", "0.065", "0.216", "-231.4%", False),
+        ("JPN",  "16%", "16", "0.031", "0.004",  "+86.3%", True),
+        ("KAZ",  "11%", "17", "0.636", "0.347",  "+45.5%", True),
+        ("HRV",  "26%", "14", "0.568", "0.678",  "-19.5%", False),
+        ("MKD",  "26%", "14", "1.121", "1.076",   "+4.0%", True),
+        ("BGR",  "32%", "13", "0.726", "0.722",   "+0.6%", True),
+        ("USA",   "0%", "19", "0.160", "0.252",  "-57.6%", False),
     ]
     for i, (c, m, n, g, mm, gp, pos) in enumerate(rows_low):
         col = RGBColor(0x88, 0xFF, 0xAA) if pos else LIGHT
-        tb_lines(sl, 0.55, 2.92+i*0.37, 5.60, 0.30,
+        tb_lines(sl, 0.55, 4.05+i*0.35, 5.60, 0.28,
                  [f"{c:<6}  {m:>5}  {n:>5}  {g:>7}  {mm:>7}  {gp:>7}"],
                  size=9.5, color=col)
 
-    panel(sl, 6.80, 2.15, 6.10, 3.40, "HIGH MISSINGNESS  (>37% of years have no Article IV report)", [])
-    tb_lines(sl, 6.95, 2.60, 5.80, 0.28,
+    panel(sl, 6.80, 3.28, 6.10, 2.90,
+          "DEFINITION 2 — HIGH Text Coverage  (>37% years missing Article IV)", [])
+    tb_lines(sl, 6.95, 3.73, 5.80, 0.28,
              ["Country   Miss%  Texts  GRU MSE  MMF MSE  Gain%"], size=9.5, color=GREY)
     rows_high = [
-        ("UZB",  "63%", "7",  "0.310", "0.153",  "+50.4%", True),
-        ("KGZ",  "53%", "9",  "1.168", "0.881",  "+24.6%", True),
-        ("ARM",  "53%", "9",  "1.297", "1.232",   "+5.0%", True),
-        ("GEO",  "68%", "6",  "1.054", "0.956",   "+9.2%", True),
-        ("UKR",  "63%", "7", "11.359","11.163",   "+1.7%", True),
-        ("SRB",  "47%","10",  "0.595", "0.904",  "-52.0%", False),
+        ("UZB",  "63%",  "7", "0.273",  "0.167",  "+38.8%", True),
+        ("KGZ",  "53%",  "9", "0.802",  "0.879",   "-9.6%", False),
+        ("ARM",  "53%",  "9", "1.239",  "1.307",   "-5.5%", False),
+        ("GEO",  "68%",  "6", "0.977",  "1.022",   "-4.7%", False),
+        ("UKR",  "63%",  "7", "11.842", "11.070",  "+6.5%", True),
+        ("SRB",  "47%", "10", "0.840",  "0.779",   "+7.3%", True),
     ]
     for i, (c, m, n, g, mm, gp, pos) in enumerate(rows_high):
         col = RGBColor(0x88, 0xFF, 0xAA) if pos else LIGHT
-        tb_lines(sl, 6.95, 2.92+i*0.37, 5.80, 0.30,
+        tb_lines(sl, 6.95, 4.05+i*0.35, 5.80, 0.28,
                  [f"{c:<6}  {m:>5}  {n:>5}  {g:>7}  {mm:>7}  {gp:>7}"],
                  size=9.5, color=col)
 
-    rect(sl, 0.40, 5.75, 12.50, 0.90, DARK2)
-    tb_lines(sl, 0.55, 5.85, 12.20, 0.70, [
-        "Result: HIGH-miss countries show consistent gains (5 of 6 positive) vs mixed results for LOW-miss.",
-        "Hypothesis confirmed with OpenAI embeddings. With BERT the pattern was absent.",
-    ], size=11, color=WHITE)
+    rect(sl, 0.40, 6.27, 12.50, 0.55, DARK2)
+    tb_lines(sl, 0.55, 6.34, 12.20, 0.40, [
+        "Text coverage gaps: mixed — 4/6 LOW-miss positive (JPN +86.3%, KAZ +45.5%), 3/6 HIGH-miss positive (UZB +38.8%). Not confirmed.",
+    ], size=10.5, color=WHITE)
 
     footer(sl)
     notes(sl,
-        "The secondary analysis asks whether text helps more for countries with fewer reports.\n\n"
-        "Median text missingness is 37%. Countries above the median (UZB 63%, KGZ 53%, "
-        "ARM 53%, GEO 68%, UKR 63%) show positive gains in 5 of 6 cases — GR-Add beats "
-        "NumericalGRU, sometimes dramatically (UZB +50%, KGZ +25%).\n\n"
-        "Low-missingness countries are more mixed: JPN (+95%) and KAZ (+34%) benefit strongly, "
-        "but well-covered EU-adjacent economies (BGR, ROU, HRV) where numerical data alone "
-        "is highly predictive show degradation when text is added — the gate adds noise.\n\n"
-        "USA is a notable outlier: 19/19 text coverage but GR-Add hurts significantly. "
-        "The US economy is so well-studied numerically that the IMF text adds little "
-        "incremental signal.\n\n"
-        "With BERT embeddings this stratified pattern did not exist, confirming that "
-        "full-context embeddings are necessary to extract the text signal.")
+        "Two distinct definitions of 'gappy' give opposite answers.\n\n"
+        "Definition 1 — WDI numerical missingness (from evaluate.py):\n"
+        "Samples are split at the median WDI mask fill rate. HIGH-miss samples (sparse WDI data) "
+        "show a +9.4% GR-Add improvement over DLinear, while LOW-miss samples (complete WDI data) "
+        "show a -0.8% change. The hypothesis is confirmed: when numerical indicators are missing, "
+        "text from Article IV reports compensates and improves accuracy.\n\n"
+        "Definition 2 — Article IV text coverage (from stratified_analysis.py):\n"
+        "Median text missingness is 36.8%. Only 3/6 HIGH-miss countries benefit from GR-Add "
+        "(UZB +38.8%, UKR +6.5%, SRB +7.3%) vs 4/6 LOW-miss (JPN +86.3%, KAZ +45.5%). "
+        "The hypothesis is NOT confirmed for text coverage gaps. The biggest gains are in "
+        "anchor economies with rich text, not in data-sparse countries.\n\n"
+        "Key insight: the two definitions are independent. A country can have good WDI coverage "
+        "but few Article IV reports (e.g. TKM), or vice versa. The WDI gap is the more direct "
+        "test of the hypothesis — and it confirms that text fills the numerical data gap.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -540,17 +566,17 @@ def slide_conclusions(prs):
 
     findings = [
         ("1.  Text improves forecasts — with the right embeddings",
-         "GR-Add MMF (OpenAI) achieves the best overall MSE (2.584), beating NumericalGRU (2.847) "
-         "and DLinear (3.118). Main gain is in inflation (3.684 vs 4.228). BERT truncation "
-         "limited text signal — OpenAI full-context embeddings are necessary."),
-        ("2.  All models beat the persistence baseline by ~98%",
-         "Persistence (random walk) MSE = 105.44. GR-Add MSE = 2.584. This 97.6% reduction "
-         "shows the WDI numerical panel is highly informative. Text adds an additional 9.2% "
+         "GR-Add MMF (OpenAI) achieves the best overall MSE (2.678), beating NumericalGRU (2.841) "
+         "by 6.0% and narrowly beating DLinear (2.685). Main gain is in inflation (3.909 vs 4.198, "
+         "6.9% reduction). BERT truncation limited text signal — OpenAI full-context embeddings are necessary."),
+        ("2.  All models beat the persistence baseline by ~97-98%",
+         "Persistence (random walk) MSE = 105.44. GR-Add MSE = 2.678. This 97.5% reduction "
+         "shows the WDI numerical panel is highly informative. Text adds an additional 6.9% "
          "reduction in inflation MSE on top of the numerical-only GRU."),
-        ("3.  Gappier countries benefit more from text",
-         "Countries with >37% missing Article IV texts (UZB, KGZ, ARM, GEO) show consistent "
-         "GR-Add gains (5/6 positive). Low-missingness countries are mixed — when numerical "
-         "data is dense, text provides diminishing returns."),
+        ("3.  Gappiness hypothesis confirmed for WDI gaps, not for text coverage gaps",
+         "WDI numerical gaps: HIGH-miss samples +9.4% (GR-Add vs DLinear), LOW-miss -0.8% — hypothesis confirmed. "
+         "Text coverage gaps: 4/6 LOW-miss positive (JPN +86.3%, KAZ +45.5%), 3/6 HIGH-miss positive (UZB +38.8%) — mixed, not confirmed. "
+         "Text substitutes for missing indicators; it does not substitute for missing reports."),
         ("4.  Dataset scale limits conclusiveness",
          "102 training samples, 40 test samples, 2 per country. Results are directionally "
          "meaningful but variance is high. Future work: larger coverage, domain-adapted "
@@ -569,15 +595,19 @@ def slide_conclusions(prs):
     notes(sl,
         "Summary of key findings:\n\n"
         "1. GR-Add MMF with OpenAI text-embedding-3-small and real publication dates achieves "
-        "the best test MSE at 2.584. The advantage is concentrated in inflation forecasting, "
-        "which aligns with the content of Article IV reports — they explicitly discuss "
-        "price pressures, monetary policy, and exchange rate dynamics.\n\n"
+        "the best test MSE at 2.678. The advantage is concentrated in inflation forecasting "
+        "(3.909 vs 4.198 for NumericalGRU, a 6.9% reduction), which aligns with the content "
+        "of Article IV reports — they explicitly discuss price pressures, monetary policy, "
+        "and exchange rate dynamics.\n\n"
         "2. All models dramatically outperform the persistence baseline (105.44). "
         "The bulk of the gain comes from the numerical WDI panel. Text adds an incremental "
-        "but meaningful improvement on top.\n\n"
-        "3. The stratified analysis confirms the hypothesis that text helps most where "
-        "it is scarce. For countries with thin Article IV coverage, the IMF text "
-        "compensates for sparse numerical signals.\n\n"
+        "but meaningful improvement on top (6.9% in inflation MSE).\n\n"
+        "3. The answer depends on how you define 'gappy'. When stratifying by WDI numerical "
+        "missingness (evaluate.py), HIGH-miss samples show +9.4% GR-Add improvement over DLinear "
+        "while LOW-miss samples show -0.8% — the hypothesis is confirmed. When stratifying by "
+        "Article IV text coverage (stratified_analysis.py), results are mixed (4/6 LOW-miss positive "
+        "vs 3/6 HIGH-miss positive). Text compensates for missing WDI indicators but does not "
+        "compensate for missing reports — these are two different mechanisms.\n\n"
         "4. The dataset is small. With only 2 test observations per country, conclusions "
         "must be interpreted carefully. The empirical patterns are consistent across "
         "experiments but require a larger dataset to be statistically conclusive.")

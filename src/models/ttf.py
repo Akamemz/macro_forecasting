@@ -39,7 +39,7 @@ class RecAvgTTF(nn.Module):
     ) -> torch.Tensor:            # (B, 768)
         # Time differences: (B, N)
         diff = query_ts.unsqueeze(1) - text_ts          # (B, N)
-        log_w = -(diff ** 2) / (2 * self.sigma ** 2)   # (B, N)
+        log_w = -(diff / self.sigma) ** 2               # (B, N)  — paper eq. 6: exp(-((t−τ)/σ)²)
         w = torch.exp(log_w)                            # (B, N)
 
         # Zero-out padding positions

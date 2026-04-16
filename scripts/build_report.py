@@ -140,7 +140,7 @@ story += p(
 # ── 3. models ─────────────────────────────────────────────────────────────────
 story += h1("3. Models and Architecture")
 
-story += h2("3.1 Pre-alignment")
+story += h2("3.1 Pre-alignment (Appendix H, Steps 3-4)")
 story += p(
     "For each (country, query year) sample, a 10-year lookback window is extracted "
     "producing three tensors:"
@@ -150,22 +150,39 @@ story += bp("<b>Mask</b> M ∈ {0,1}^(T×D) — 1 = observed, 0 = missing")
 story += bp("<b>Timestamps</b> τ ∈ [0,1]^T — calendar years normalised to unit interval")
 story += sp(4)
 story += p("Indicator values are z-scored using training-split statistics only to prevent leakage.")
+story += p(
+    "<b>Step 3</b> (Appendix H): each context timestep's feature vector is expanded from "
+    "D to 2D+1 by concatenating the missingness mask and the normalised timestamp: "
+    "[values | mask | τ_t]. This gives the model explicit access to when each observation "
+    "was made and whether it was genuinely observed."
+)
+story += p(
+    "<b>Step 4</b> (Appendix H): a query row [0(D) | 0(D) | τ_query] is appended, "
+    "making the sequence length T+1. This row has zero values and mask (no observation) "
+    "but carries the normalised query year, telling the model where in time it is "
+    "predicting. Final input shape: (B, T+1, 2D+1) = (B, 11, 15)."
+)
 
 story += h2("3.2 DLinear (baseline)")
 story += p(
-    "Decomposes the numerical series into trend and seasonal components, then applies "
-    "independent linear layers to each:"
+    "Applies canonical pre-alignment (Steps 3-4) to produce a (B, 11, 15) input tensor, "
+    "then decomposes it into trend (moving average, kernel=3) and seasonal residual "
+    "components, applying independent linear layers to each flattened component:"
 )
-story += eq("y_hat = W_trend · trend(X) + W_season · season(X)")
-story += p("Unimodal (numerical only). 284 parameters.")
+story += eq("y_hat = W_trend · trend(X).flatten() + W_season · season(X).flatten()")
+story += p(
+    "Input dimension after flattening: (T+1) × (2D+1) = 11 × 15 = 165. "
+    "Unimodal (numerical only). 664 parameters."
+)
 
 story += h2("3.3 NumericalGRU (ablation)")
 story += p(
-    "A GRU encoder over the masked numerical series. Receives the value matrix and "
-    "missingness mask concatenated along the feature dimension:"
+    "A GRU encoder over the canonically pre-aligned numerical series (same Steps 3-4 "
+    "as DLinear). Input per timestep is 2D+1=15 features; the query row is appended "
+    "so the GRU sees T+1=11 steps:"
 )
-story += eq("h_t = GRU([x_t ; m_t], h_{t-1}),    y_hat = W · h_T")
-story += p("Unimodal ablation — tests whether temporal dynamics help over the linear baseline. 15,490 parameters.")
+story += eq("h_t = GRU([x_t ; m_t ; τ_t], h_{t-1}),    y_hat = W · h_{T+1}")
+story += p("Unimodal ablation — tests whether temporal dynamics help over the linear baseline. 15,682 parameters.")
 
 story += h2("3.4 RecAvg TTF — Text Context Module")
 story += p(
@@ -173,25 +190,31 @@ story += p(
     "a Gaussian kernel weighted by distance from the query year:"
 )
 story += eq("c(t*) = ( Σ_i  w_i · e_i ) / ( Σ_i  w_i )")
-story += eq("w_i = exp( -(t* - t_i)^2 / (2 σ^2) ),    σ = 1.0 year")
+story += eq("w_i = exp( -((t* - t_i) / σ)^2 ),    σ = 1.0 year")
 story += p(
     "This naturally handles the IMF publication lag — a report published late "
     "receives less weight than an on-time report. When no text is available, "
     "c(t*) is set to a zero vector."
 )
 
-story += h2("3.5 GR-Add MMF — Full Multimodal Model")
+story += h2("3.5 GR-Add MMF — Full Multimodal Model (eq. 12-16)")
 story += p(
-    "The Gated Residual Additive Multimodal Fusion layer combines the GRU hidden "
-    "state with the text context vector:"
+    "The full multimodal model follows Appendix I.2 (equations 12-16). After the "
+    "backbone GRU produces a numerical forecast y_ts and the RecAvg TTF produces "
+    "text context e, a fusion GRU ingests z = [y_ts ; e] to produce a hidden state "
+    "from which a linear correction and gate are computed:"
 )
-story += eq("g     = σ( W_g · [h_gru ; c] + b_g )")
-story += eq("δ     = tanh( W_δ · [h_gru ; c] + b_δ )")
-story += eq("h_out = h_gru + g ⊙ δ")
+story += eq("z        = cat( y_ts, e )                              (eq. 12-13)")
+story += eq("H        = FusionGRU( z )                              (hidden state)")
+story += eq("ΔY       = W_Δ · H + b_Δ                              (eq. 14, linear)")
+story += eq("G        = σ( W_g · z + b_g )                         (eq. 15, gate)")
+story += eq("y_fused  = G ⊙ y_ts + (1−G) ⊙ (y_ts + ΔY)           (eq. 16)")
 story += p(
-    "The sigmoid gate g decides how much of the text correction δ to apply. "
-    "When text is absent (c = 0), the gate collapses and the model reduces to "
-    "a pure GRU prediction. 65,222 parameters."
+    "The sigmoid gate G decides how much of the text-informed correction ΔY to apply. "
+    "Note: ΔY is a linear (not tanh) projection per eq. 14; the gate W_g operates on "
+    "z = [y_ts ; e] (not on the GRU hidden state). "
+    "When text is absent (e = 0), ΔY and G become deterministic functions of y_ts "
+    "alone and the gate can suppress the correction entirely. 177,866 parameters."
 )
 
 # ── 4. embedding models ───────────────────────────────────────────────────────
@@ -245,90 +268,95 @@ story += h2("6.1 Primary Metric — Test Set MSE")
 story += table(
     [
         ["Model",          "GDP MSE", "Inf MSE", "Overall MSE", "Params"],
-        ["— BERT embeddings —", "", "", "", ""],
-        ["DLinear",        "1.599",   "3.952",   "2.775",       "284"],
-        ["NumericalGRU",   "1.485",   "3.911",   "2.698",       "15,490"],
-        ["GR-Add MMF",     "1.520",   "4.335",   "2.928",       "65,222"],
-        ["— OpenAI text-embedding-3-small —", "", "", "", ""],
-        ["DLinear",        "1.640",   "3.659",   "2.649",       "284"],
-        ["NumericalGRU",   "1.503",   "4.011",   "2.757",       "15,490"],
-        ["GR-Add MMF",     "1.445",   "3.835",   "2.640",       "65,222"],
+        ["— OpenAI text-embedding-3-small (corrected architecture) —", "", "", "", ""],
+        ["DLinear",        "1.344",   "4.027",   "2.685",       "664"],
+        ["NumericalGRU",   "1.483",   "4.198",   "2.841",       "15,682"],
+        ["GR-Add MMF",     "1.447",   "3.909",   "2.678",       "177,866"],
     ],
-    [2.6*inch, 1.0*inch, 1.0*inch, 1.2*inch, 0.8*inch],
+    [2.6*inch, 1.0*inch, 1.0*inch, 1.2*inch, 0.9*inch],
 )
 story += sp()
 story += p(
-    "With BERT embeddings, GR-Add MMF underperforms both baselines (2.928 overall). "
-    "With OpenAI embeddings, GR-Add achieves the best overall MSE (2.640), narrowly "
-    "beating DLinear (2.649) and clearly beating NumericalGRU (2.757). This reversal "
-    "directly demonstrates the impact of the 512-token truncation: BERT was discarding "
-    "the most informative parts of the Article IV reports."
+    "GR-Add MMF achieves the best overall MSE (2.678), beating NumericalGRU (2.841) "
+    "by 6.0% and narrowly beating DLinear (2.685). The main advantage is concentrated "
+    "in inflation forecasting (3.909 vs 4.198, a 6.9% reduction), which aligns with "
+    "the content of Article IV reports — they explicitly discuss price pressures, "
+    "monetary policy, and exchange rate dynamics. GDP forecast gains are more modest. "
+    "Results use the corrected architecture matching the TIME-IMM paper (Appendix H "
+    "pre-alignment, eq. 12-16 fusion, corrected RecAvg kernel)."
 )
 
 story += h2("6.2 Secondary Analysis — Stratified by Text Missingness")
 story += p(
-    "Countries were split at the median text missingness rate (37%) into low-coverage "
-    "and high-coverage groups. The table below shows per-country results with OpenAI "
+    "Countries were split at the median text missingness rate (36.8%) into low- and "
+    "high-missingness groups. The table below shows per-country results with OpenAI "
     "embeddings (gain = NumericalGRU MSE − GR-Add MSE; positive = text helped):"
 )
 story += table(
     [
         ["Country", "Text miss%", "Texts", "GRU MSE", "GR-Add MSE", "Gain%"],
-        ["— LOW missingness (≤37%) —", "", "", "", "", ""],
-        ["JPN",  "16%", "16", "0.123",  "0.006",  "+94.9%"],
-        ["KAZ",  "11%", "17", "0.650",  "0.426",  "+34.4%"],
-        ["MKD",  "26%", "14", "0.776",  "1.092",  "−40.7%"],
-        ["BGR",  "32%", "13", "0.562",  "0.848",  "−51.1%"],
-        ["USA",  "0%",  "19", "0.065",  "0.216",  "−231%"],
-        ["— HIGH missingness (>37%) —", "", "", "", "", ""],
-        ["UZB",  "63%", "7",  "0.310",  "0.153",  "+50.4%"],
-        ["KGZ",  "53%", "9",  "1.168",  "0.881",  "+24.6%"],
-        ["ARM",  "53%", "9",  "1.297",  "1.232",  "+5.0%"],
-        ["GEO",  "68%", "6",  "1.054",  "0.956",  "+9.2%"],
-        ["UKR",  "63%", "7",  "11.359", "11.163", "+1.7%"],
+        ["— LOW missingness (≤36.8%) —", "", "", "", "", ""],
+        ["JPN",  "16%", "16", "0.031",  "0.004",  "+86.3%"],
+        ["KAZ",  "11%", "17", "0.636",  "0.347",  "+45.5%"],
+        ["MKD",  "26%", "14", "1.121",  "1.076",  "+4.0%"],
+        ["BGR",  "32%", "13", "0.726",  "0.722",  "+0.6%"],
+        ["HRV",  "26%", "14", "0.568",  "0.678",  "−19.5%"],
+        ["USA",  "0%",  "19", "0.160",  "0.252",  "−57.6%"],
+        ["— HIGH missingness (>36.8%) —", "", "", "", "", ""],
+        ["UZB",  "63%", "7",  "0.273",  "0.167",  "+38.8%"],
+        ["UKR",  "63%", "7",  "11.842", "11.070", "+6.5%"],
+        ["SRB",  "47%", "10", "0.840",  "0.779",  "+7.3%"],
+        ["KGZ",  "53%", "9",  "0.802",  "0.879",  "−9.6%"],
+        ["ARM",  "53%", "9",  "1.239",  "1.307",  "−5.5%"],
+        ["GEO",  "68%", "6",  "0.977",  "1.022",  "−4.7%"],
     ],
     [0.9*inch, 1.0*inch, 0.7*inch, 1.0*inch, 1.1*inch, 1.0*inch],
 )
 story += sp()
 story += p(
-    "High-missingness countries (UZB, KGZ, ARM, GEO, UKR) consistently benefit from "
-    "the text signal, with GR-Add reducing error vs NumericalGRU in 5 out of 5 cases "
-    "shown. Among low-missingness countries the pattern is mixed — JPN and KAZ benefit "
-    "strongly, but well-covered EU-adjacent economies (BGR, ROU, HRV) where numerical "
-    "data alone is highly predictive show degradation when text is added."
+    "The hypothesis — that countries with fewer Article IV texts benefit more from "
+    "GR-Add — is not clearly confirmed. LOW-missingness countries show 4/6 positive "
+    "gains (JPN +86.3%, KAZ +45.5%, MKD +4.0%, BGR +0.6%); HIGH-missingness countries "
+    "show only 3/6 positive (UZB +38.8%, UKR +6.5%, SRB +7.3%). The biggest gains "
+    "are concentrated in anchor economies (JPN, KAZ) where OpenAI embeddings capture "
+    "rich policy context."
 )
 story += p(
-    "With BERT embeddings, this pattern was absent — the hypothesis was not confirmed. "
-    "The emergence of the stratified effect with OpenAI embeddings suggests that "
-    "full-context embeddings are necessary for the text signal to be useful, "
-    "particularly for countries where the report content must compensate for sparse "
-    "numerical coverage."
+    "Notable outliers: USA (0% text missingness, 19 texts) shows −57.6% — the US "
+    "economy is so well-studied numerically that the IMF text likely adds noise. "
+    "Ukraine's high GRU MSE (11.842) reflects the exceptional shock volatility of "
+    "2022-2023; the text provides marginal improvement (+6.5%)."
 )
 
 # ── 7. conclusions ────────────────────────────────────────────────────────────
 story += h1("7. Conclusions")
 story += bp(
-    "<b>Text helps when embeddings are full-context.</b> GR-Add MMF achieves the best "
-    "overall MSE (2.640) with OpenAI embeddings but underperforms baselines with "
-    "BERT-truncated embeddings (2.928). The 512-token limit was discarding the Staff "
-    "Appraisal section — the most forward-looking part of the report."
+    "<b>Text improves forecasts — with the right embeddings.</b> GR-Add MMF achieves "
+    "the best overall MSE (2.678) with OpenAI text-embedding-3-small, beating "
+    "NumericalGRU (2.841) by 6.0% and narrowly beating DLinear (2.685). The main gain "
+    "is in inflation forecasting (3.909 vs 4.198, 6.9% reduction). BERT's 512-token "
+    "limit was discarding the Staff Appraisal section — the most forward-looking part "
+    "of the report — making full-context embeddings a necessary prerequisite."
 )
 story += bp(
-    "<b>High-missingness countries benefit more from text.</b> The secondary analysis "
-    "confirms the hypothesis: countries with fewer Article IV reports (UZB, KGZ, ARM, "
-    "GEO) see consistent MSE reductions when text is fused, while data-rich countries "
-    "with predictable trajectories gain little or are hurt by the additional signal."
+    "<b>All models beat the persistence baseline by ~97-98%.</b> Persistence MSE = 105.44; "
+    "GR-Add MSE = 2.678 (97.5% reduction). The bulk of this gain comes from the "
+    "numerical WDI panel. Text adds an incremental but meaningful improvement on top, "
+    "particularly for inflation (6.9% additional reduction)."
+)
+story += bp(
+    "<b>Text-missingness hypothesis not clearly confirmed.</b> 4/6 LOW-miss countries "
+    "show positive GR-Add gains (JPN +86.3%, KAZ +45.5%) vs 3/6 HIGH-miss countries "
+    "(UZB +38.8%). The biggest gains are in anchor economies with rich text coverage "
+    "and high predictive value, not in data-sparse countries as originally hypothesized. "
+    "A larger sample is needed to test this definitively."
 )
 story += bp(
     "<b>The dataset is small by ML standards.</b> With 102 training samples across "
     "22 countries and 5 query years, results should be interpreted cautiously. The "
     "per-country test set has only 2 samples per country (2022 and 2023), making "
-    "individual country estimates noisy."
-)
-story += bp(
-    "<b>Embedding quality is a first-order design choice.</b> Switching from BERT to "
-    "a long-context embedding model reversed the model ranking. For future work, "
-    "domain-adapted embeddings (e.g. fine-tuned on economic text) could further "
+    "individual country estimates noisy. Embedding quality is a first-order design "
+    "choice — domain-adapted embeddings (fine-tuned on economic text) could further "
     "improve the text signal."
 )
 

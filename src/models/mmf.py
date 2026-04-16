@@ -1,22 +1,23 @@
 """
 MMF Module — GR-Add (GRU-Gated Residual Addition).
 
-Architecture:
-  1. Numerical encoder: GRU over the imputed + masked time series
-     Input per timestep: cat(values, mask)  →  (T, 2D)
-     Output: final hidden state h  →  (B, hidden_dim)
-     Base prediction:  num_pred = Linear(hidden_dim, n_targets)
+Implements the architecture from TIME-IMM Appendix I.2 (eq. 12–16), with
+canonical pre-alignment (Appendix H Steps 3-4) applied to the backbone GRU.
 
-  2. Text projection: RecAvg context (B, 768) → Linear → (B, hidden_dim)
+Pre-alignment (applied in both GRAddMMF and NumericalOnlyGRU):
+  Step 3 — input per timestep: [values | mask | norm_timestamp]  →  (2D+1) features
+  Step 4 — query row appended: [0(D) | 0(D) | norm_query_ts]    →  seq_len T+1
 
-  3. GRU-Gated Residual Addition:
-     fused   = cat(h, text_proj)      →  (B, 2*hidden_dim)
-     gate    = sigmoid(W_g @ fused)   →  (B, n_targets)  ∈ (0, 1)
-     delta   = tanh(W_d @ fused)      →  (B, n_targets)
-     output  = num_pred + gate * delta
+GR-Add architecture (eq. 12–16):
+  1. Backbone GRU over pre-aligned numerical input → base forecast y_ts
+  2. RecAvg TTF over Article IV embeddings → text context e  (shape: 768)
+  3. Fusion GRU over z = [y_ts ; e]                        (eq. 12-13)
+  4. ΔY = W_Δ · H + b_Δ  (linear correction)              (eq. 14)
+  5. G  = σ(W_g · [y_ts ; e] + b_g)  (gate)               (eq. 15)
+  6. y_fused = G ⊙ y_ts + (1−G) ⊙ (y_ts + ΔY)            (eq. 16)
 
-The gate learns how much text context should correct the base numerical
-forecast — if text adds no information the gate collapses to ~0.
+When text is absent (e = 0), ΔY and G become deterministic functions of y_ts
+alone and the gate is free to suppress the correction entirely.
 """
 
 import torch
@@ -26,105 +27,135 @@ from src.models.ttf import RecAvgTTF
 from src.config import TEXT_EMB_DIM, SIGMA
 
 
+# ── shared pre-alignment helper ───────────────────────────────────────────────
+
+def _build_numerical_input(batch: dict) -> torch.Tensor:
+    """
+    Appendix H Steps 3-4: build (B, T+1, 2D+1) input tensor from a batch dict.
+
+      Context rows (T):  [values | mask | norm_timestamp]
+      Query row    (1):  [zeros  | zeros | norm_query_ts ]
+    """
+    values     = batch["values"]      # (B, T, D)
+    mask       = batch["mask"]        # (B, T, D)
+    timestamps = batch["timestamps"]  # (B, T)
+    query_ts   = batch["query_ts"]    # (B,)
+    B, T, D    = values.shape
+
+    # Step 3: expand features to 2D+1
+    ctx = torch.cat([values, mask, timestamps.unsqueeze(-1)], dim=-1)  # (B, T, 2D+1)
+
+    # Step 4: append query row
+    q_row = torch.zeros(B, 1, 2 * D + 1, device=values.device)
+    q_row[:, 0, -1] = query_ts                                          # timestamp feature
+
+    return torch.cat([ctx, q_row], dim=1)                               # (B, T+1, 2D+1)
+
+
+# ── models ────────────────────────────────────────────────────────────────────
+
 class GRAddMMF(nn.Module):
     """
-    Full multimodal model: numerical GRU encoder + RecAvg TTF + GR-Add fusion.
+    Full multimodal model: backbone GRU + RecAvg TTF + GR-Add fusion.
 
     Args:
-        n_indicators: D (number of WDI indicators, default 7)
+        n_indicators: D — number of WDI indicators (default 7)
         hidden_dim:   GRU hidden size
-        n_targets:    number of forecast targets (default 2: GDP growth + inflation)
-        sigma:        Gaussian kernel width for RecAvg (normalised-year units)
-        dropout:      applied after GRU hidden state
+        n_targets:    number of forecast targets (default 2: GDP + inflation)
+        sigma:        Gaussian kernel width for RecAvg TTF
+        dropout:      applied after backbone GRU hidden state
     """
 
     def __init__(
         self,
-        n_indicators: int = 7,
-        hidden_dim:   int = 64,
-        n_targets:    int = 2,
+        n_indicators: int   = 7,
+        hidden_dim:   int   = 64,
+        n_targets:    int   = 2,
         sigma:        float = SIGMA,
         dropout:      float = 0.1,
     ):
         super().__init__()
-        self.hidden_dim  = hidden_dim
-        self.n_targets   = n_targets
+        self.n_targets = n_targets
 
-        # Numerical encoder — input = (values || mask) per step
-        self.num_gru = nn.GRU(
-            input_size=2 * n_indicators,
-            hidden_size=hidden_dim,
-            num_layers=1,
-            batch_first=True,
-        )
-        self.dropout = nn.Dropout(dropout)
+        # ── backbone numerical GRU ────────────────────────────────────────────
+        # Input per step: [values | mask | timestamp] = 2D+1 features
+        self.num_gru  = nn.GRU(2 * n_indicators + 1, hidden_dim,
+                               num_layers=1, batch_first=True)
+        self.dropout  = nn.Dropout(dropout)
+        self.num_head = nn.Linear(hidden_dim, n_targets)   # → y_ts
 
-        # Base prediction head (numerical only)
-        self.num_head = nn.Linear(hidden_dim, n_targets)
-
-        # TTF module (no learnable params)
+        # ── TTF module (no learnable params) ─────────────────────────────────
         self.ttf = RecAvgTTF(sigma=sigma)
 
-        # Text projection
-        self.text_proj = nn.Sequential(
-            nn.Linear(TEXT_EMB_DIM, hidden_dim),
-            nn.Tanh(),
-        )
+        # ── GR-Add fusion GRU (eq. 12-13) ────────────────────────────────────
+        # Input: z_k = [y^ts_k ; e_k]  ∈ R^(n_targets + TEXT_EMB_DIM)
+        fusion_dim = n_targets + TEXT_EMB_DIM                # 2 + 768 = 770
+        self.fusion_gru = nn.GRU(fusion_dim, hidden_dim,
+                                 num_layers=1, batch_first=True)
 
-        # GR-Add gate and delta
-        fused_dim = 2 * hidden_dim
-        self.gate  = nn.Linear(fused_dim, n_targets)
-        self.delta = nn.Linear(fused_dim, n_targets)
+        # ΔY = W_Δ · H + b_Δ  (eq. 14) — linear projection from GRU hidden
+        self.w_delta = nn.Linear(hidden_dim, n_targets)
+
+        # G = σ(W_g · [Y^ts ; E] + b_g)  (eq. 15)
+        self.w_g = nn.Linear(fusion_dim, n_targets)
 
     def forward(self, batch: dict) -> torch.Tensor:
         """
         Args:
-            batch: dict from macro_collate with keys
+            batch: dict from macro_collate — keys:
                    values, mask, timestamps, query_ts,
                    text_embs, text_ts, text_mask
         Returns:
-            pred: (B, n_targets)
+            y_fused: (B, n_targets)
         """
-        values     = batch["values"]      # (B, T, D)
-        mask       = batch["mask"]        # (B, T, D)
-        text_embs  = batch["text_embs"]  # (B, N, 768)
-        text_ts    = batch["text_ts"]    # (B, N)
-        text_mask  = batch["text_mask"]  # (B, N)
-        query_ts   = batch["query_ts"]   # (B,)
+        text_embs = batch["text_embs"]   # (B, N, 768)
+        text_ts   = batch["text_ts"]     # (B, N)
+        text_mask = batch["text_mask"]   # (B, N)
+        query_ts  = batch["query_ts"]    # (B,)
 
-        # ── numerical path ───────────────────────────────────────────────────
-        inp = torch.cat([values, mask], dim=-1)   # (B, T, 2D)
-        _, h_n = self.num_gru(inp)                # h_n: (1, B, hidden)
-        h = self.dropout(h_n.squeeze(0))          # (B, hidden)
-        num_pred = self.num_head(h)               # (B, n_targets)
+        # ── backbone numerical path ───────────────────────────────────────────
+        x = _build_numerical_input(batch)            # (B, T+1, 2D+1)
+        _, h_n = self.num_gru(x)                     # h_n: (1, B, hidden)
+        h = self.dropout(h_n.squeeze(0))             # (B, hidden)
+        y_ts = self.num_head(h)                      # (B, n_targets)
 
-        # ── text context ─────────────────────────────────────────────────────
-        ctx       = self.ttf(text_embs, text_ts, query_ts, text_mask)  # (B, 768)
-        text_proj = self.text_proj(ctx)                                  # (B, hidden)
+        # ── text context via TTF ──────────────────────────────────────────────
+        e = self.ttf(text_embs, text_ts, query_ts, text_mask)   # (B, 768)
 
-        # ── GR-Add fusion ────────────────────────────────────────────────────
-        fused = torch.cat([h, text_proj], dim=-1)   # (B, 2*hidden)
-        gate  = torch.sigmoid(self.gate(fused))      # (B, n_targets)
-        delta = torch.tanh(self.delta(fused))        # (B, n_targets)
-        pred  = num_pred + gate * delta              # (B, n_targets)
+        # ── GR-Add fusion (eq. 12–16) ─────────────────────────────────────────
+        # z_k = [y^ts ; e]  for the single query step k=1
+        z = torch.cat([y_ts, e], dim=-1)             # (B, n_targets+768)
 
-        return pred
+        # H = GRU({z_k})  — one step → take hidden state
+        _, h_fused = self.fusion_gru(z.unsqueeze(1)) # h_fused: (1, B, hidden)
+        h_fused = h_fused.squeeze(0)                 # (B, hidden)
+
+        # ΔY = W_Δ H + b_Δ  (linear, not tanh — per eq. 14)
+        delta_y = self.w_delta(h_fused)              # (B, n_targets)
+
+        # G = σ(W_g · [Y^ts ; E] + b_g)
+        gate = torch.sigmoid(self.w_g(z))            # (B, n_targets)
+
+        # Y_fused = G ⊙ Y^ts + (1−G) ⊙ (Y^ts + ΔY)
+        y_fused = gate * y_ts + (1 - gate) * (y_ts + delta_y)
+
+        return y_fused                               # (B, n_targets)
 
 
 class NumericalOnlyGRU(nn.Module):
     """
-    Unimodal baseline: same GRU encoder as GRAddMMF but ignores text.
-    Used for ablation (Text removed → pure numerical).
+    Unimodal ablation: GRU backbone with canonical pre-alignment, no text.
+
+    Uses the same backbone as GRAddMMF (pre-aligned input: 2D+1 features,
+    T+1 steps with query row appended) so the two models are directly comparable.
     """
 
     def __init__(self, n_indicators: int = 7, hidden_dim: int = 64, n_targets: int = 2):
         super().__init__()
-        self.gru  = nn.GRU(2 * n_indicators, hidden_dim, batch_first=True)
+        self.gru  = nn.GRU(2 * n_indicators + 1, hidden_dim, batch_first=True)
         self.head = nn.Linear(hidden_dim, n_targets)
 
     def forward(self, batch: dict) -> torch.Tensor:
-        values = batch["values"]
-        mask   = batch["mask"]
-        inp    = torch.cat([values, mask], dim=-1)
-        _, h_n = self.gru(inp)
+        x = _build_numerical_input(batch)   # (B, T+1, 2D+1)
+        _, h_n = self.gru(x)
         return self.head(h_n.squeeze(0))
