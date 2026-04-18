@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "DLinear",
+    "enable_text": true,
+    "TTF_module": "TTF_T2V_XAttn",
+    "MMF_module": "MMF_GR_Add",
+    "metrics": {
+        "loss": 0.19371397793293,
+        "mse": 0.19371397793293,
+        "mae": 0.31062132120132446,
+        "rmse": 0.44012948870658875,
+        "mape": 0.244024395942688
+    }
+}

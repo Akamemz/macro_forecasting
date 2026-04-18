@@ -1,0 +1,25 @@
+{
+  "dataset": "FNSPID",
+  "model": "CRU",
+  "enable_text": false,
+  "profile": {
+    "name": "default_like_but_safer",
+    "split_method": "sample",
+    "history": 24,
+    "pred_window": 24,
+    "stride": 24,
+    "patch_size": 24,
+    "epoch": 1000,
+    "epochs": 20,
+    "patience": 3,
+    "batch_size": 32,
+    "lr": 0.001
+  },
+  "metrics": {
+    "loss": 0.1703053116798401,
+    "mse": 0.1703053116798401,
+    "mae": 0.27384138107299805,
+    "rmse": 0.41268065571784973,
+    "mape": 0.19373083114624023
+  }
+}

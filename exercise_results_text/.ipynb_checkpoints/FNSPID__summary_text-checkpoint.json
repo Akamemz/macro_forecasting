@@ -1,0 +1,39 @@
+[
+  {
+    "model": "Informer",
+    "ok": true
+  },
+  {
+    "model": "DLinear",
+    "ok": true
+  },
+  {
+    "model": "PatchTST",
+    "ok": true
+  },
+  {
+    "model": "TimesNet",
+    "ok": true
+  },
+  {
+    "model": "TimeMixer",
+    "ok": true
+  },
+  {
+    "model": "CRU",
+    "ok": false,
+    "error": "'str' object has no attribute 'type'"
+  },
+  {
+    "model": "LatentODE",
+    "ok": true
+  },
+  {
+    "model": "NeuralFlow",
+    "ok": true
+  },
+  {
+    "model": "tPatchGNN",
+    "ok": true
+  }
+]

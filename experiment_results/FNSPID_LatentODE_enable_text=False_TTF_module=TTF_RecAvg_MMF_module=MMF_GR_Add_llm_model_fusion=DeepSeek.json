@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "LatentODE",
+    "enable_text": false,
+    "TTF_module": "TTF_RecAvg",
+    "MMF_module": "MMF_GR_Add",
+    "metrics": {
+        "loss": 0.18629713356494904,
+        "mse": 0.18629713356494904,
+        "mae": 0.31014636158943176,
+        "rmse": 0.4316215217113495,
+        "mape": 0.2476866990327835
+    }
+}

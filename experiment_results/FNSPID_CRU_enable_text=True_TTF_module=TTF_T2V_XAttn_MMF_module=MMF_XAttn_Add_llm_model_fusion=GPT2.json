@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "CRU",
+    "enable_text": true,
+    "TTF_module": "TTF_T2V_XAttn",
+    "MMF_module": "MMF_XAttn_Add",
+    "metrics": {
+        "loss": 0.18907511234283447,
+        "mse": 0.18907511234283447,
+        "mae": 0.30320513248443604,
+        "rmse": 0.43482768535614014,
+        "mape": 0.2227637618780136
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "PatchTST",
+    "enable_text": true,
+    "TTF_module": "TTF_T2V_XAttn",
+    "MMF_module": "MMF_XAttn_Add",
+    "metrics": {
+        "loss": 0.16072769463062286,
+        "mse": 0.16072769463062286,
+        "mae": 0.2707986831665039,
+        "rmse": 0.40090858936309814,
+        "mape": 0.2374686449766159
+    }
+}

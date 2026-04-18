@@ -1,0 +1,25 @@
+{
+  "dataset": "FNSPID",
+  "model": "tPatchGNN",
+  "enable_text": false,
+  "profile": {
+    "name": "default_like_but_safer",
+    "split_method": "sample",
+    "history": 24,
+    "pred_window": 24,
+    "stride": 24,
+    "patch_size": 24,
+    "epoch": 1000,
+    "epochs": 20,
+    "patience": 3,
+    "batch_size": 32,
+    "lr": 0.001
+  },
+  "metrics": {
+    "loss": 0.161884143948555,
+    "mse": 0.161884143948555,
+    "mae": 0.27030429244041443,
+    "rmse": 0.40234827995300293,
+    "mape": 0.2377595454454422
+  }
+}

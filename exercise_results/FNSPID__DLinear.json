@@ -1,0 +1,25 @@
+{
+  "dataset": "FNSPID",
+  "model": "DLinear",
+  "enable_text": false,
+  "profile": {
+    "name": "default_like_but_safer",
+    "split_method": "sample",
+    "history": 24,
+    "pred_window": 24,
+    "stride": 24,
+    "patch_size": 24,
+    "epoch": 1000,
+    "epochs": 20,
+    "patience": 3,
+    "batch_size": 32,
+    "lr": 0.001
+  },
+  "metrics": {
+    "loss": 0.11839663982391357,
+    "mse": 0.11839663982391357,
+    "mae": 0.20490425825119019,
+    "rmse": 0.3440881371498108,
+    "mape": 0.1665862649679184
+  }
+}

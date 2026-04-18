@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "Informer",
+    "enable_text": false,
+    "TTF_module": "TTF_RecAvg",
+    "MMF_module": "MMF_GR_Add",
+    "metrics": {
+        "loss": 0.19371397793293,
+        "mse": 0.19371397793293,
+        "mae": 0.31062132120132446,
+        "rmse": 0.44012948870658875,
+        "mape": 0.244024395942688
+    }
+}

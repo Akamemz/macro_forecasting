@@ -1,0 +1,16 @@
+{
+  "dataset": "FNSPID",
+  "model": "TimeMixer",
+  "enable_text": true,
+  "use_text_embeddings": true,
+  "llm_model_fusion": "GPT2",
+  "TTF_module": "TTF_T2V_XAttn",
+  "MMF_module": "MMF_XAttn_Add",
+  "metrics": {
+    "loss": 0.291418194770813,
+    "mse": 0.291418194770813,
+    "mae": 0.4500720798969269,
+    "rmse": 0.5398316383361816,
+    "mape": 0.21160925924777985
+  }
+}

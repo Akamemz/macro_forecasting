@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "NeuralFlow",
+    "enable_text": true,
+    "TTF_module": "TTF_T2V_XAttn",
+    "MMF_module": "MMF_GR_Add",
+    "metrics": {
+        "loss": 0.18432582914829254,
+        "mse": 0.18432582914829254,
+        "mae": 0.30087554454803467,
+        "rmse": 0.42933183908462524,
+        "mape": 0.2346576452255249
+    }
+}

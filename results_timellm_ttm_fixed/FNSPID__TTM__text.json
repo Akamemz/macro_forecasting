@@ -1,0 +1,19 @@
+{
+  "dataset": "FNSPID",
+  "model": "TTM",
+  "enable_text": true,
+  "use_text_embeddings": true,
+  "llm_model_fusion": "GPT2",
+  "llm_layers_fusion": null,
+  "TTF_module": "TTF_T2V_XAttn",
+  "MMF_module": "MMF_XAttn_Add",
+  "patch_size": 12,
+  "stride": 12,
+  "metrics": {
+    "loss": 0.36239707469940186,
+    "mse": 0.36239707469940186,
+    "mae": 0.5017334818840027,
+    "rmse": 0.6019942760467529,
+    "mape": 0.2884129285812378
+  }
+}

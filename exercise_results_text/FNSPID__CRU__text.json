@@ -1,0 +1,16 @@
+{
+  "dataset": "FNSPID",
+  "model": "CRU",
+  "enable_text": true,
+  "use_text_embeddings": true,
+  "llm_model_fusion": "GPT2",
+  "TTF_module": "TTF_T2V_XAttn",
+  "MMF_module": "MMF_XAttn_Add",
+  "metrics": {
+    "loss": 0.22718362510204315,
+    "mse": 0.22718362510204315,
+    "mae": 0.328725665807724,
+    "rmse": 0.4766378402709961,
+    "mape": 0.24537281692028046
+  }
+}

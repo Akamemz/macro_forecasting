@@ -1,0 +1,14 @@
+{
+    "dataset": "FNSPID",
+    "model": "TimeMixer",
+    "enable_text": true,
+    "TTF_module": "TTF_RecAvg",
+    "MMF_module": "MMF_XAttn_Add",
+    "metrics": {
+        "loss": 0.17165476083755493,
+        "mse": 0.17165476083755493,
+        "mae": 0.2863745093345642,
+        "rmse": 0.4143123924732208,
+        "mape": 0.2498137354850769
+    }
+}
