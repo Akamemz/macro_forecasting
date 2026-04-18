@@ -1,6 +1,6 @@
 # macro_forecasting
 
-Macro-economic forecasting pipeline replicating Time-IMM, with GR-Add and XAttn-Add multimodal fusion on top of IMM-TSF backbones.
+Macro-economic forecasting pipeline replicating Time-IMM, with GR-Add and XAttn-Add multimodal fusion on top of IMM-TSF backbones using the wdi data and imf reports text.
 
 ## Dependencies
 
