@@ -1,0 +1,185 @@
+{
+  "median_text_miss_rate": 0.368,
+  "per_country": [
+    {
+      "country": "USA",
+      "text_miss_rate": 0.0,
+      "n_texts": 19,
+      "gru_mse": 0.0653,
+      "mmf_mse": 0.2164,
+      "gain": -0.1511,
+      "gain_pct": -231.4
+    },
+    {
+      "country": "KAZ",
+      "text_miss_rate": 0.105,
+      "n_texts": 17,
+      "gru_mse": 0.6497,
+      "mmf_mse": 0.4261,
+      "gain": 0.2236,
+      "gain_pct": 34.4
+    },
+    {
+      "country": "JPN",
+      "text_miss_rate": 0.158,
+      "n_texts": 16,
+      "gru_mse": 0.1234,
+      "mmf_mse": 0.0062,
+      "gain": 0.1171,
+      "gain_pct": 94.9
+    },
+    {
+      "country": "HRV",
+      "text_miss_rate": 0.263,
+      "n_texts": 14,
+      "gru_mse": 0.4079,
+      "mmf_mse": 0.6433,
+      "gain": -0.2354,
+      "gain_pct": -57.7
+    },
+    {
+      "country": "MKD",
+      "text_miss_rate": 0.263,
+      "n_texts": 14,
+      "gru_mse": 0.7762,
+      "mmf_mse": 1.0918,
+      "gain": -0.3157,
+      "gain_pct": -40.7
+    },
+    {
+      "country": "BGR",
+      "text_miss_rate": 0.316,
+      "n_texts": 13,
+      "gru_mse": 0.5615,
+      "mmf_mse": 0.8483,
+      "gain": -0.2868,
+      "gain_pct": -51.1
+    },
+    {
+      "country": "ROU",
+      "text_miss_rate": 0.316,
+      "n_texts": 13,
+      "gru_mse": 0.4447,
+      "mmf_mse": 0.7342,
+      "gain": -0.2896,
+      "gain_pct": -65.1
+    },
+    {
+      "country": "ALB",
+      "text_miss_rate": 0.368,
+      "n_texts": 12,
+      "gru_mse": 0.1011,
+      "mmf_mse": 0.217,
+      "gain": -0.1158,
+      "gain_pct": -114.6
+    },
+    {
+      "country": "BLR",
+      "text_miss_rate": 0.368,
+      "n_texts": 12,
+      "gru_mse": 0.8818,
+      "mmf_mse": 0.8635,
+      "gain": 0.0183,
+      "gain_pct": 2.1
+    },
+    {
+      "country": "MNG",
+      "text_miss_rate": 0.368,
+      "n_texts": 12,
+      "gru_mse": 0.8271,
+      "mmf_mse": 0.7969,
+      "gain": 0.0302,
+      "gain_pct": 3.7
+    },
+    {
+      "country": "TUR",
+      "text_miss_rate": 0.368,
+      "n_texts": 12,
+      "gru_mse": 30.0872,
+      "mmf_mse": 27.1197,
+      "gain": 2.9675,
+      "gain_pct": 9.9
+    },
+    {
+      "country": "AZE",
+      "text_miss_rate": 0.474,
+      "n_texts": 10,
+      "gru_mse": 0.4068,
+      "mmf_mse": 0.4946,
+      "gain": -0.0878,
+      "gain_pct": -21.6
+    },
+    {
+      "country": "BIH",
+      "text_miss_rate": 0.474,
+      "n_texts": 10,
+      "gru_mse": 0.6719,
+      "mmf_mse": 0.7574,
+      "gain": -0.0855,
+      "gain_pct": -12.7
+    },
+    {
+      "country": "SRB",
+      "text_miss_rate": 0.474,
+      "n_texts": 10,
+      "gru_mse": 0.5946,
+      "mmf_mse": 0.9038,
+      "gain": -0.3092,
+      "gain_pct": -52.0
+    },
+    {
+      "country": "ARM",
+      "text_miss_rate": 0.526,
+      "n_texts": 9,
+      "gru_mse": 1.2966,
+      "mmf_mse": 1.2318,
+      "gain": 0.0648,
+      "gain_pct": 5.0
+    },
+    {
+      "country": "KGZ",
+      "text_miss_rate": 0.526,
+      "n_texts": 9,
+      "gru_mse": 1.1684,
+      "mmf_mse": 0.8807,
+      "gain": 0.2877,
+      "gain_pct": 24.6
+    },
+    {
+      "country": "MDA",
+      "text_miss_rate": 0.526,
+      "n_texts": 9,
+      "gru_mse": 3.3521,
+      "mmf_mse": 3.3004,
+      "gain": 0.0517,
+      "gain_pct": 1.5
+    },
+    {
+      "country": "UKR",
+      "text_miss_rate": 0.632,
+      "n_texts": 7,
+      "gru_mse": 11.3588,
+      "mmf_mse": 11.1632,
+      "gain": 0.1956,
+      "gain_pct": 1.7
+    },
+    {
+      "country": "UZB",
+      "text_miss_rate": 0.632,
+      "n_texts": 7,
+      "gru_mse": 0.3095,
+      "mmf_mse": 0.1534,
+      "gain": 0.1561,
+      "gain_pct": 50.4
+    },
+    {
+      "country": "GEO",
+      "text_miss_rate": 0.684,
+      "n_texts": 6,
+      "gru_mse": 1.0537,
+      "mmf_mse": 0.9564,
+      "gain": 0.0973,
+      "gain_pct": 9.2
+    }
+  ]
+}
