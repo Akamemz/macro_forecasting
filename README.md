@@ -1,6 +1,8 @@
 # macro_forecasting
 
-Macro-economic forecasting pipeline replicating Time-IMM, with **GR-Add** and **XAttn-Add** multimodal fusion on top of IMM-TSF backbones using WDI macro panel data and IMF Article IV report text embeddings.
+Macro-economic forecasting pipeline replicating Time-IMM, with **GR-Add** and **T2V-XAttn-Add** multimodal fusion on top of IMM-TSF backbones using WDI macro panel data and IMF Article IV report text embeddings.
+
+Text-time fusion uses **T2V-XAttn** (Time2Vec + Cross-Attention) — replaces the earlier RecAvg baseline.
 
 ## Dependencies
 
@@ -66,7 +68,7 @@ python main_all.py --device cpu --epochs 50
 | Original | 3 | DLinear, NumericalGRU, GR-Add |
 | IMM-TSF | 11 | IMM-TSF backbone models |
 | GR-Add | 11 | IMM-TSF + GR-Add multimodal fusion |
-| XAttn-Add | 11 | IMM-TSF + Cross-Attention multimodal fusion |
+| T2V-XAttn-Add | 11 | IMM-TSF + T2V-XAttn multimodal fusion |
 
 ## Results
 
@@ -74,30 +76,30 @@ python main_all.py --device cpu --epochs 50
 
 | Model | Val MSE | Test MSE |
 |-------|---------|----------|
-| imm_dlinear_gradd | 1.0266 | **2.3640** |
-| imm_timesnet_gradd | 1.2048 | 2.4775 |
-| imm_timemixer_gradd | 1.0223 | 2.6957 |
-| imm_timellm_gradd | 0.9950 | 2.7414 |
-| imm_latent_ode_gradd | 0.9663 | 2.8273 |
-| imm_cru_gradd | 1.0521 | 2.9046 |
-| imm_tpatchgnn_gradd | 0.9356 | 2.9329 |
-| imm_informer_gradd | 1.0162 | 3.0030 |
-| imm_neural_flow_gradd | 0.9668 | 3.1400 |
-| imm_ttm_gradd | 0.9863 | 3.1763 |
-| imm_patchtst_gradd | 1.1123 | 3.2597 |
+| imm_dlinear_gradd | 1.1017 | **2.3278** |
+| imm_timellm_gradd | 1.0638 | 2.5813 |
+| imm_ttm_gradd | 1.1320 | 2.7547 |
+| imm_informer_gradd | 1.0420 | 2.7646 |
+| imm_patchtst_gradd | 1.2164 | 2.8314 |
+| imm_timesnet_gradd | 1.0817 | 2.9355 |
+| imm_cru_gradd | 0.9728 | 2.9546 |
+| imm_timemixer_gradd | 1.0318 | 2.9587 |
+| imm_latent_ode_gradd | 0.9666 | 3.0967 |
+| imm_tpatchgnn_gradd | 0.9821 | 3.2002 |
+| imm_neural_flow_gradd | 0.9679 | 3.2967 |
 
-### XAttn-Add fusion (`--xattn-only`)
+### T2V-XAttn-Add fusion (`--xattn-only`)
 
 | Model | Val MSE | Test MSE |
 |-------|---------|----------|
-| imm_timellm_xattn | 1.1223 | **2.5326** |
-| imm_dlinear_xattn | 1.2232 | 2.6083 |
-| imm_cru_xattn | 0.9451 | 2.7631 |
-| imm_informer_xattn | 1.1359 | 2.7662 |
-| imm_neural_flow_xattn | 0.9583 | 2.7843 |
-| imm_timemixer_xattn | 0.9621 | 2.8224 |
-| imm_patchtst_xattn | 1.4121 | 2.8381 |
-| imm_tpatchgnn_xattn | 0.9272 | 2.8483 |
-| imm_timesnet_xattn | 1.1867 | 2.9495 |
-| imm_latent_ode_xattn | 0.9940 | 3.0770 |
-| imm_ttm_xattn | 1.4167 | 3.3890 |
+| imm_dlinear_xattn | 1.1131 | **2.1530** |
+| imm_timemixer_xattn | 0.9407 | 2.6751 |
+| imm_timesnet_xattn | 1.1807 | 2.6834 |
+| imm_tpatchgnn_xattn | 0.9561 | 2.7439 |
+| imm_neural_flow_xattn | 0.9396 | 2.7585 |
+| imm_ttm_xattn | 1.3729 | 2.7666 |
+| imm_latent_ode_xattn | 0.9180 | 2.8329 |
+| imm_timellm_xattn | 0.9887 | 2.9176 |
+| imm_patchtst_xattn | 1.4466 | 2.9470 |
+| imm_cru_xattn | 0.9435 | 3.0127 |
+| imm_informer_xattn | 1.0145 | 3.0171 |
