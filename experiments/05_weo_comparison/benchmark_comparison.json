@@ -1,0 +1,550 @@
+{
+  "note": "WEO uses IMF DataMapper current vintage (revised/actual for 2022-2023). Persistence uses last observed WDI value as forecast. Our models trained on WDI data up to 2021.",
+  "persistence": {
+    "mse_gdp": 75.7606,
+    "mse_inf": 135.1127,
+    "mse_overall": 105.4367,
+    "n_pairs": 40,
+    "per_country": {
+      "KAZ": {
+        "mse_gdp": 2.41,
+        "mse_inf": 24.4507
+      },
+      "KGZ": {
+        "mse_gdp": 5.9886,
+        "mse_inf": 7.0592
+      },
+      "UZB": {
+        "mse_gdp": 2.1093,
+        "mse_inf": 1.2886
+      },
+      "ARM": {
+        "mse_gdp": 32.365,
+        "mse_inf": 23.2412
+      },
+      "AZE": {
+        "mse_gdp": 6.0521,
+        "mse_inf": 38.7705
+      },
+      "GEO": {
+        "mse_gdp": 4.9364,
+        "mse_inf": 46.9952
+      },
+      "MDA": {
+        "mse_gdp": 188.5004,
+        "mse_inf": 396.565
+      },
+      "BLR": {
+        "mse_gdp": 63.7731,
+        "mse_inf": 68.6404
+      },
+      "UKR": {
+        "mse_gdp": 1106.5712,
+        "mse_inf": 85.4399
+      },
+      "MNG": {
+        "mse_gdp": 8.6208,
+        "mse_inf": 41.8941
+      },
+      "ALB": {
+        "mse_gdp": 8.9105,
+        "mse_inf": 12.9029
+      },
+      "BIH": {
+        "mse_gdp": 7.4999,
+        "mse_inf": 103.7944
+      },
+      "MKD": {
+        "mse_gdp": 1.5552,
+        "mse_inf": 71.9406
+      },
+      "SRB": {
+        "mse_gdp": 14.3035,
+        "mse_inf": 31.2528
+      },
+      "TUR": {
+        "mse_gdp": 20.3661,
+        "mse_inf": 1559.4863
+      },
+      "ROU": {
+        "mse_gdp": 2.8419,
+        "mse_inf": 43.9956
+      },
+      "BGR": {
+        "mse_gdp": 9.8956,
+        "mse_inf": 89.632
+      },
+      "HRV": {
+        "mse_gdp": 20.4862,
+        "mse_inf": 37.865
+      },
+      "USA": {
+        "mse_gdp": 6.3457,
+        "mse_inf": 13.0136
+      },
+      "JPN": {
+        "mse_gdp": 1.6813,
+        "mse_inf": 4.0261
+      }
+    }
+  },
+  "weo_datamapper": {
+    "mse_gdp": 0.0167,
+    "mse_inf": 0.161,
+    "mse_overall": 0.0888,
+    "n_pairs": 40,
+    "per_country": {
+      "KAZ": {
+        "mse_gdp": 0.0,
+        "mse_inf": 0.0257
+      },
+      "KGZ": {
+        "mse_gdp": 0.0006,
+        "mse_inf": 0.0014
+      },
+      "UZB": {
+        "mse_gdp": 0.0,
+        "mse_inf": 0.002
+      },
+      "ARM": {
+        "mse_gdp": 0.0,
+        "mse_inf": 0.0128
+      },
+      "AZE": {
+        "mse_gdp": 0.0011,
+        "mse_inf": 0.0012
+      },
+      "GEO": {
+        "mse_gdp": 0.0014,
+        "mse_inf": 0.0001
+      },
+      "MDA": {
+        "mse_gdp": 0.0,
+        "mse_inf": 0.0008
+      },
+      "BLR": {
+        "mse_gdp": 0.0129,
+        "mse_inf": 0.0
+      },
+      "UKR": {
+        "mse_gdp": 0.0015,
+        "mse_inf": 0.0014
+      },
+      "MNG": {
+        "mse_gdp": 0.0008,
+        "mse_inf": 0.0027
+      },
+      "ALB": {
+        "mse_gdp": 0.0005,
+        "mse_inf": 0.0012
+      },
+      "BIH": {
+        "mse_gdp": 0.0004,
+        "mse_inf": 0.0002
+      },
+      "MKD": {
+        "mse_gdp": 0.1043,
+        "mse_inf": 0.0007
+      },
+      "SRB": {
+        "mse_gdp": 0.0067,
+        "mse_inf": 0.0006
+      },
+      "TUR": {
+        "mse_gdp": 0.0019,
+        "mse_inf": 0.0009
+      },
+      "ROU": {
+        "mse_gdp": 0.0277,
+        "mse_inf": 0.0
+      },
+      "BGR": {
+        "mse_gdp": 0.0274,
+        "mse_inf": 3.0586
+      },
+      "HRV": {
+        "mse_gdp": 0.1066,
+        "mse_inf": 0.1085
+      },
+      "USA": {
+        "mse_gdp": 0.0002,
+        "mse_inf": 0.0001
+      },
+      "JPN": {
+        "mse_gdp": 0.0395,
+        "mse_inf": 0.0005
+      }
+    }
+  },
+  "our_models": {
+    "dlinear": {
+      "mse_gdp": 1.5682333707809448,
+      "mse_inf": 4.667316913604736,
+      "mae_gdp": 0.7194322347640991,
+      "mae_inf": 1.354858160018921,
+      "mse_overall": 3.1177752017974854
+    },
+    "numerical_gru": {
+      "mse_gdp": 1.4655704498291016,
+      "mse_inf": 4.227854251861572,
+      "mae_gdp": 0.6345962882041931,
+      "mae_inf": 1.2643134593963623,
+      "mse_overall": 2.846712112426758
+    },
+    "gr_add": {
+      "mse_gdp": 1.4840084314346313,
+      "mse_inf": 3.683570146560669,
+      "mae_gdp": 0.6715594530105591,
+      "mae_inf": 1.1565296649932861,
+      "mse_overall": 2.583789348602295
+    }
+  },
+  "weo_forecasts_by_year": {
+    "2022": {
+      "KAZ": {
+        "gdp_growth": 3.2,
+        "inflation": 15.0
+      },
+      "KGZ": {
+        "gdp_growth": 9.0,
+        "inflation": 13.9
+      },
+      "TJK": {
+        "gdp_growth": 8.0,
+        "inflation": 6.6
+      },
+      "TKM": {
+        "gdp_growth": 3.3,
+        "inflation": 11.2
+      },
+      "UZB": {
+        "gdp_growth": 6.0,
+        "inflation": 11.4
+      },
+      "ARM": {
+        "gdp_growth": 12.6,
+        "inflation": 8.8
+      },
+      "AZE": {
+        "gdp_growth": 4.7,
+        "inflation": 13.9
+      },
+      "GEO": {
+        "gdp_growth": 11.0,
+        "inflation": 11.9
+      },
+      "MDA": {
+        "gdp_growth": -4.6,
+        "inflation": 28.7
+      },
+      "BLR": {
+        "gdp_growth": -4.5,
+        "inflation": 15.2
+      },
+      "UKR": {
+        "gdp_growth": -28.8,
+        "inflation": 20.2
+      },
+      "MNG": {
+        "gdp_growth": 5.0,
+        "inflation": 15.1
+      },
+      "ALB": {
+        "gdp_growth": 4.8,
+        "inflation": 6.7
+      },
+      "BIH": {
+        "gdp_growth": 4.2,
+        "inflation": 14.0
+      },
+      "MKD": {
+        "gdp_growth": 2.8,
+        "inflation": 14.2
+      },
+      "SRB": {
+        "gdp_growth": 2.6,
+        "inflation": 12.0
+      },
+      "TUR": {
+        "gdp_growth": 5.4,
+        "inflation": 72.3
+      },
+      "ROU": {
+        "gdp_growth": 4.0,
+        "inflation": 13.8
+      },
+      "BGR": {
+        "gdp_growth": 4.0,
+        "inflation": 13.0
+      },
+      "HRV": {
+        "gdp_growth": 7.3,
+        "inflation": 10.7
+      },
+      "USA": {
+        "gdp_growth": 2.5,
+        "inflation": 8.0
+      },
+      "JPN": {
+        "gdp_growth": 1.0,
+        "inflation": 2.5
+      }
+    },
+    "2023": {
+      "KAZ": {
+        "gdp_growth": 5.1,
+        "inflation": 14.5
+      },
+      "KGZ": {
+        "gdp_growth": 9.0,
+        "inflation": 10.8
+      },
+      "TJK": {
+        "gdp_growth": 8.3,
+        "inflation": 3.7
+      },
+      "TKM": {
+        "gdp_growth": 4.2,
+        "inflation": -1.6
+      },
+      "UZB": {
+        "gdp_growth": 6.3,
+        "inflation": 10.0
+      },
+      "ARM": {
+        "gdp_growth": 8.3,
+        "inflation": 2.0
+      },
+      "AZE": {
+        "gdp_growth": 1.4,
+        "inflation": 8.8
+      },
+      "GEO": {
+        "gdp_growth": 7.8,
+        "inflation": 2.5
+      },
+      "MDA": {
+        "gdp_growth": 1.2,
+        "inflation": 13.4
+      },
+      "BLR": {
+        "gdp_growth": 4.1,
+        "inflation": 5.0
+      },
+      "UKR": {
+        "gdp_growth": 5.5,
+        "inflation": 12.9
+      },
+      "MNG": {
+        "gdp_growth": 7.4,
+        "inflation": 10.4
+      },
+      "ALB": {
+        "gdp_growth": 4.0,
+        "inflation": 4.8
+      },
+      "BIH": {
+        "gdp_growth": 2.0,
+        "inflation": 6.1
+      },
+      "MKD": {
+        "gdp_growth": 2.1,
+        "inflation": 9.4
+      },
+      "SRB": {
+        "gdp_growth": 3.8,
+        "inflation": 12.4
+      },
+      "TUR": {
+        "gdp_growth": 5.0,
+        "inflation": 53.9
+      },
+      "ROU": {
+        "gdp_growth": 2.4,
+        "inflation": 10.4
+      },
+      "BGR": {
+        "gdp_growth": 1.9,
+        "inflation": 8.6
+      },
+      "HRV": {
+        "gdp_growth": 3.3,
+        "inflation": 8.4
+      },
+      "USA": {
+        "gdp_growth": 2.9,
+        "inflation": 4.1
+      },
+      "JPN": {
+        "gdp_growth": 1.2,
+        "inflation": 3.3
+      }
+    }
+  },
+  "persistence_forecasts_by_year": {
+    "2022": {
+      "KAZ": {
+        "gdp_growth": 4.299999997294563,
+        "inflation": 8.04147134028391
+      },
+      "KGZ": {
+        "gdp_growth": 5.507007626719229,
+        "inflation": 11.90503981851468
+      },
+      "UZB": {
+        "gdp_growth": 8.034683126400495,
+        "inflation": 10.8492397508122
+      },
+      "ARM": {
+        "gdp_growth": 5.800000000656453,
+        "inflation": 7.184836294433707
+      },
+      "AZE": {
+        "gdp_growth": 5.616440271505539,
+        "inflation": 6.650299127087786
+      },
+      "GEO": {
+        "gdp_growth": 10.644233658096924,
+        "inflation": 9.566914338247692
+      },
+      "MDA": {
+        "gdp_growth": 13.929999788978575,
+        "inflation": 5.106411290028408
+      },
+      "BLR": {
+        "gdp_growth": 2.438862102349475,
+        "inflation": 9.460283896231058
+      },
+      "UKR": {
+        "gdp_growth": 3.4456206594594363,
+        "inflation": 9.363139176952233
+      },
+      "MNG": {
+        "gdp_growth": 1.63676957736662,
+        "inflation": 7.35894657888155
+      },
+      "ALB": {
+        "gdp_growth": 8.969576190740952,
+        "inflation": 2.041471631395451
+      },
+      "BIH": {
+        "gdp_growth": 7.391642564728457,
+        "inflation": 1.98163900587622
+      },
+      "MKD": {
+        "gdp_growth": 4.510679490382216,
+        "inflation": 3.230749121329191
+      },
+      "SRB": {
+        "gdp_growth": 7.949056504722776,
+        "inflation": 4.085102853351022
+      },
+      "TUR": {
+        "gdp_growth": 11.811094450607,
+        "inflation": 19.59649269133236
+      },
+      "ROU": {
+        "gdp_growth": 5.5873507253886885,
+        "inflation": 5.05232876096582
+      },
+      "BGR": {
+        "gdp_growth": 7.828172328221655,
+        "inflation": 3.297744352995149
+      },
+      "HRV": {
+        "gdp_growth": 12.632219035102407,
+        "inflation": 2.554506996420408
+      },
+      "USA": {
+        "gdp_growth": 6.05505293244555,
+        "inflation": 4.69785886363742
+      },
+      "JPN": {
+        "gdp_growth": 2.69657404187188,
+        "inflation": -0.233352779398264
+      }
+    },
+    "2023": {
+      "KAZ": {
+        "gdp_growth": 3.1999999997073445,
+        "inflation": 15.0278644440851
+      },
+      "KGZ": {
+        "gdp_growth": 8.96750520041391,
+        "inflation": 13.92290931741758
+      },
+      "UZB": {
+        "gdp_growth": 6.001342322034418,
+        "inflation": 11.44664369988359
+      },
+      "ARM": {
+        "gdp_growth": 12.599999999776628,
+        "inflation": 8.640911089738546
+      },
+      "AZE": {
+        "gdp_growth": 4.71468033247649,
+        "inflation": 13.8522590144267
+      },
+      "GEO": {
+        "gdp_growth": 10.95853213856239,
+        "inflation": 11.89816542031976
+      },
+      "MDA": {
+        "gdp_growth": -4.600000025532296,
+        "inflation": 28.73729767662346
+      },
+      "BLR": {
+        "gdp_growth": -4.6583959132899935,
+        "inflation": 15.20967527408096
+      },
+      "UKR": {
+        "gdp_growth": -28.758584215508492,
+        "inflation": 20.1836366617478
+      },
+      "MNG": {
+        "gdp_growth": 5.0327096366527,
+        "inflation": 15.1509728200805
+      },
+      "ALB": {
+        "gdp_growth": 4.826800623435901,
+        "inflation": 6.725202715300596
+      },
+      "BIH": {
+        "gdp_growth": 4.226813333903252,
+        "inflation": 14.0208440826771
+      },
+      "MKD": {
+        "gdp_growth": 2.7588841533296744,
+        "inflation": 14.20471731958329
+      },
+      "SRB": {
+        "gdp_growth": 2.7034770554365366,
+        "inflation": 11.98151173447029
+      },
+      "TUR": {
+        "gdp_growth": 5.441225113224007,
+        "inflation": 72.30883598912071
+      },
+      "ROU": {
+        "gdp_growth": 4.1877130510410865,
+        "inflation": 13.79548874325208
+      },
+      "BGR": {
+        "gdp_growth": 4.083864091512297,
+        "inflation": 15.32525892643664
+      },
+      "HRV": {
+        "gdp_growth": 7.294453436426679,
+        "inflation": 10.7805806758686
+      },
+      "USA": {
+        "gdp_growth": 2.51237531986017,
+        "inflation": 8.00279982052121
+      },
+      "JPN": {
+        "gdp_growth": 0.941998775483285,
+        "inflation": 2.49770278172255
+      }
+    }
+  }
+}
